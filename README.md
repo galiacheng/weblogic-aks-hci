@@ -81,13 +81,13 @@ Before launching Windows Admin Center, we have to set trusted sites and allowed 
 
 6. Set up AKS cluster in CHI. Follow this [document](https://github.com/Azure/aks-hci/blob/main/eval/steps/2a_DeployAKSHCI_WAC.md#deploying-aks-on-azure-stack-hci-management-cluster) to set up AKS. Please stop before clicking **Apply**.
 
-    After inputing the configurations, click **Review**, you should find settings like:
+    After inputing the configurations, in the **Review** page, you should find settings like:
 
     ![Configure AKS cluster](resources/screenshot-aks-configurations.png)
 
     Before clicking **Apply**, make sure the AAD application is authorized to call APIs when they are granted permissions by users/admins as part of the consent process. 
     
-    Go to Azure portal, click **Azure Active Directory**, and click your application name, e.g. `WindowsAdminCenter-https://akshcihost1213`, click **API permissions**. You will find API status are not authorized.
+    Go to Azure portal, click **Azure Active Directory**, click your application name, e.g. `WindowsAdminCenter-https://akshcihost1213`, and click **API permissions**. You will find API status are not authorized.
 
     Click **Grant admin consent for your subscription** to authorize, find the following screenshot.
     ![Grant Admin Consent](resources/screenshot-grant-admin-consent.png)
