@@ -205,6 +205,90 @@ With the token, we can manage the AKS cluster resource in the development machin
 
 This sample set up WebLogic cluster using WSL terminal from Windows 11 machine.
 
+Run the shell commands to connect to AKS outside the HCI host.
+
+Install `connectedk8s` extension and enable the Cluster Connect the Arc-enabled Kubernetes cluster.
+
+```bash
+# Install or upgrade Azure CLI to version >= 2.16.0 and <= 2.29.0
+az extension add --name connectedk8s
+az extension update --name connectedk8s
+```
+
+Connect to AKS cluster.
+
+```bash
+CLUSTER_NAME=<my-workload-cluster>
+RESOURCE_GROUP=<resource-group-name>
+$TOKEN=<the-token-from-above-powershell-command>
+
+az connectedk8s proxy -n $CLUSTER_NAME -g $RESOURCE_GROUP --token $TOKEN
+```
+
+You will find output like:
+
+```text
+$ az connectedk8s proxy -n $CLUSTER_NAME -g $RESOURCE_GROUP --token $TOKEN
+Proxy is listening on port 47011
+Merged "my-workload-cluster" as current context in /home/bamboo/.kube/config
+Start sending kubectl requests on 'my-workload-cluster' context using kubeconfig at /home/bamboo/.kube/config
+Press Ctrl+C to close proxy.
+```
+
+Please do not close the proxy, we will deploy the WebLogic cluster in the next steps.
+
+## Deploy WebLoigc Server with domain on a PV
+
+Now the AKS cluster is ready to deploy WebLogic workloads. The previous steps have connected the AKS cluster in your local development machine, which has `git`, `helm`, `kubectl`, AZ CLI installed.
+
+You are allowed to manage the AKS resources using `kubectl`.
+
+Let's test by getting the namespace, you should find the following output:
+
+```bash
+$ kubectl get ns
+NAME              STATUS   AGE
+azure-arc         Active   103m
+default           Active   113m
+kube-node-lease   Active   113m
+kube-public       Active   113m
+kube-system       Active   113m
+```
+
+Before moving forward, we still have to create storage for the domain, as we will store the domain configuration to a PV.
+
+This sample will enable the NFS server in the Hyper-V host, the Windows Server 2022 Azure VM. Follow this [guide](https://docs.microsoft.com/en-us/windows-server/storage/nfs/deploy-nfs) to eable NFS server and create NFS share.
+
+This sample use Server Manager to create NFS share in the Azure VM. 
+
+1. Connect to the Azure VM with user `azureuser`
+2. Select Start, type servermanager.exe, and then select Server Manager.
+3. In the Quick Start, click Add roles and features.
+4. Installation Type: Role-based or feature-based installation.
+5. Server Roles: File and Storage Service -> File and iSCSI SErvice -> check **Server for NFS**
+6. Wait for the installation process finished.
+
+Then create NFS share.
+
+1. Open Server Manager again.
+2. On the left, select File and Storage Services, and then select Shares.
+3. Select To create a file share, start the New Share Wizard.
+4. On the Select Profile page, select either NFS Share - Quick or NFS Share - Advanced, then select Next.
+5. On the Share Location page, select a server and select **volume V**, and select Next.
+6. On the Share Name page, specify a name for the new share, here is `NFSShare`, and select Next.
+7. On the Authentication page, specify all the authentication method. Enable **Allow unmapped user access by UID/GID**
+8. On the Share Permissions page, select All Machines and enable Allow root access.
+9. In Permissions, configure the type of access control you want the users to have, and select OK.
+10. On the Confirmation page, review your configuration, and select Create to create the NFS file share.
+
+![Create NSF Share](resources/screenshot-nfsshare.png)
+
+After the process finished, you should be able to find the file share from Windows Admin Center -> Files & file sharing.
+
+![Create NSF Share](resources/screenshot-nfsshare2.png)
+
+Now, we cn move on to create WebLogic cluster.
+
 
 
 
