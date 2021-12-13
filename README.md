@@ -293,9 +293,9 @@ After the process finished, you should be able to find the file share from Windo
 Now, we can move on to create persistent volumn.
 
 
-### Create Persistent Volumn
+### Create Persistent Volumn Claim
 
-This sample install NFS server in the same machine of HCI infrastructure. The NFS server is `akshcihost1213.akshci.local`.
+This sample installs NFS server in the same machine of HCI infrastructure. The NFS server endpoint is `akshcihost1213.akshci.local`.
 
 Before attaching pv to the AKS cluster, we have enable the CSI driver in the HCI AKS cluster, for more information, see this [document](https://docs.microsoft.com/en-us/azure-stack/aks-hci/container-storage-interface-files#use-nfs-drivers).
 
@@ -307,7 +307,7 @@ Open PowerShell from Windows Admin Center, and run the following command:
 Install-AksHciCsiNfs -clusterName my-workload-cluster
 ```
 
-After the command finished, you should find csi-nfs pods are running:
+After the command finished, you should find csi-nfs pods are running in different nodes:
 
 ```powershell
 kubectl get pod -n kube-system
@@ -320,7 +320,7 @@ csi-nfs-node-tm2v5                                3/3     Running   0          5
 ... ...
 ```
 
-Now let's switch to your develoment machine.
+Now let's switch to your development machine.
 
 Create storage class for NFS share with the following configurations, make sure the server endpoint is matched with your NFS server. You can find the sample config from [nfs-storage-class.yaml](domain-on-pv/nfs-storage-class.yaml)
 
@@ -377,6 +377,127 @@ wls-on-aks-in-hci   Bound    pvc-244d98f4-318d-4777-b22e-4e2733493d97   5Gi     
 ```
 
 Now, you are able to create your WebLogic cluster with domain on the PV.
+
+### Install Oracle WebLogic Server Kubernetes Operator
+
+Follow this [section](https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/domain-on-pv/#install-weblogic-kubernetes-operator-into-the-aks-cluster) to install the operator.
+
+Here lists the commands, run the command on your development machine, WSL terminal, assuming the terminal still connects to AKS cluster:
+
+```bash
+helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
+helm install weblogic-operator weblogic-operator/weblogic-operator --version "3.3.4"
+```
+
+You should find the operator pod is running in default namespace.
+
+```text
+$ kubectl get pods
+NAME                                              READY   STATUS      RESTARTS   AGE
+weblogic-operator-56654bcdb7-qww7f                1/1     Running     0          25m
+... ...
+```
+
+We will use sample scripts from [WebLogic Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to create WebLogic cluster, please clone the repository before going on.
+
+```bash
+git clone --branch v3.3.6 https://github.com/oracle/weblogic-kubernetes-operator.git
+
+```
+
+### Deploy WebLogic cluster
+
+With the WebLogic operator running, you are able to deply the WebLogic domain following steps in [Create WebLogic domain](https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/domain-on-pv/#create-weblogic-domain).
+
+Here lists the commands:
+
+1. Create WebLogic account secret and Oracle SSO account secret.
+
+    ```bash
+    #create weblogic account secret, user name is weblogic, password is welcome1
+    cd kubernetes/samples/scripts/create-weblogic-domain-credentials
+    ./create-weblogic-credentials.sh -u weblogic -p welcome1 -d domain1
+
+    #create Oracle SSO account secret.
+    export SECRET_NAME_DOCKER="wlsregcred"
+    cd kubernetes/samples/scripts/create-kubernetes-secrets
+    ./create-docker-credentials-secret.sh -s ${SECRET_NAME_DOCKER} -e oracleSsoEmail@bar.com -p oracleSsoPassword -u oracleSsoEmail@bar.com
+    ```
+
+2. Create WebLogic domain
+
+    This sample uses [domain1.yaml](domain-on-pv/domain1.yaml) to deploy the WebLogic cluster.
+
+    ```bash
+    cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv
+    ./create-domain.sh -i <path-to-domain1.yaml> -o ~/azure -e -v
+    ```
+    
+    If the script is running correctly, you should find output like:
+
+    ```text
+    createDomainScriptName is create-domain-job.sh
+    Generating /home/bamboo/azure/weblogic-domains/domain1/create-domain-job.yaml
+    Generating /home/bamboo/azure/weblogic-domains/domain1/delete-domain-job.yaml
+    Generating /home/bamboo/azure/weblogic-domains/domain1/domain.yaml
+    Checking to see if the secret domain1-weblogic-credentials exists in namespace default
+    Checking if the persistent volume claim wls-on-aks-in-hci in NameSpace default exists
+    The persistent volume claim wls-on-aks-in-hci already exists in NameSpace default
+    W1213 18:25:50.628454    6179 helpers.go:557] --dry-run is deprecated and can be replaced with --dry-run=client.
+    configmap/domain1-create-weblogic-sample-domain-job-cm configured
+    Checking the configmap domain1-create-weblogic-sample-domain-job-cm was created
+    'weblogic.domainUID' already has a value (domain1), and --overwrite is false
+    'weblogic.domainName' already has a value (domain1), and --overwrite is false
+    Checking if object type job with name domain1-create-weblogic-sample-domain-job exists
+    Deleting domain1-create-weblogic-sample-domain-job using /home/bamboo/azure/weblogic-domains/domain1/create-domain-job.yaml
+    job.batch "domain1-create-weblogic-sample-domain-job" deleted
+    Creating the domain by creating the job /home/bamboo/azure/weblogic-domains/domain1/create-domain-job.yaml
+    job.batch/domain1-create-weblogic-sample-domain-job created
+    Waiting for the job to complete...
+    status on iteration 1 of 30
+    pod domain1-create-weblogic-sample-domain-job-zmbp5 status is Completed
+    domain.weblogic.oracle/domain1 created
+
+    Domain domain1 was created and will be started by the WebLogic Kubernetes Operator
+
+    Administration console access is available at http://127.0.0.1:30701/console
+    The following files were generated:
+      /home/bamboo/azure/weblogic-domains/domain1/create-domain-inputs.yaml
+      /home/bamboo/azure/weblogic-domains/domain1/create-domain-job.yaml
+      /home/bamboo/azure/weblogic-domains/domain1/domain.yaml
+
+    Completed
+    ```
+
+    But now, you can not access the WebLogic Console as the admin server is not ready.
+    It takes about 5min for the whole cluster is ready.
+
+    You should find the WebLogic pods status like:
+
+    ```text
+    $ kubectl get pod -w
+    NAME                                              READY   STATUS      RESTARTS   AGE
+    domain1-create-weblogic-sample-domain-job-zmbp5   0/1     Completed   0          50s
+    domain1-introspector-cnb4s                        1/1     Running     0          14s
+    weblogic-operator-7c6889968f-bnth5                1/1     Running     0          117s
+    domain1-introspector-cnb4s                        0/1     Completed   0          21s
+    domain1-introspector-cnb4s                        0/1     Terminating   0          22s
+    domain1-introspector-cnb4s                        0/1     Terminating   0          22s
+    domain1-admin-server                              0/1     Pending       0          0s
+    domain1-admin-server                              0/1     Pending       0          0s
+    domain1-admin-server                              0/1     ContainerCreating   0          0s
+    domain1-admin-server                              0/1     ContainerCreating   0          1s
+    domain1-admin-server                              0/1     Running             0          1s
+    domain1-admin-server                              1/1     Running             0          77s
+    domain1-managed-server1                           0/1     Pending             0          0s
+    domain1-managed-server1                           0/1     Pending             0          0s
+    domain1-managed-server1                           0/1     ContainerCreating   0          0s
+    domain1-managed-server1                           0/1     ContainerCreating   0          2s
+    domain1-managed-server1                           0/1     Running             0          53s
+    domain1-managed-server1                           1/1     Running             0          53s
+    ```
+
+
 
 
 
