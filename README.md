@@ -32,7 +32,7 @@ WIP
 
 ## Prerequisites
 
-- Azure Active Directive
+- Azure Active Directory
   - Have a user with **Member** type. The user should be granted with **Application administrator**. The sample will use this user to connect to Azure from HCI.
   - If you are Microsoft employee, please do not use your MSFT account.
 
