@@ -16,14 +16,21 @@ In this guide, you'll walk through the steps to run Oracle WebLogic Server on Az
 - [Contents](#contents)
 - [Architecture](#architecture)
 - [Prerequisites](#prerequisites)
-- [Set up AKS cluster on Azure Stack HCI]()
-  - [Deploy Hyper-V host]()
-  - [Set up Azure HCI AKS cluster]()
-  - [Connect to Azure Arc AKS]()
+- [Set up AKS cluster on Azure Stack HCI](#set-up-aks-cluster-on-azure-stack-hci)
+  - [Deploy Hyper-V host](#deploy-hyper-v-host)
+  - [Set up Azure HCI AKS cluster](#set-up-azure-hci-aks-cluster)
+  - [Connect to Azure Arc AKS](#connect-to-azure-arc-aks)
 - [Deploy WebLoigc Server with domain on a PV]()
+  - [Enable NFS server for storage]()
+  - [Install Oracle WebLogic Server Kubernetes Operator]()
+  - [Deploy Weblogic cluster]()
+  - [Expose WebLogic cluster via Load Balancer]()
+  - [Deploy application]()
 - [Deploy WebLoigc Server with model in imgae]()
-- [Expose WebLogic cluster via Load Balancer]()
-- [Expose WebLogic cluster via Ingress Controller]()
+  - [Build WebLogic image and push to ACR]()
+  - [Install Oracle WebLogic Server Kubernetes Operator]()
+  - [Deploy Weblogic cluster]()
+  - [Expose application via Ingress Controller]()
 - [CI/CD consideration]()
 
 ## Architecture
@@ -37,7 +44,7 @@ WIP
   - If you are Microsoft employee, please do not use your MSFT account.
 
 - Azure Subscription.
-  - The user should have **Owner** role in the subscription. The user will assign a contributor role to an AAD application that Windows Admin Center creat.
+  - The user should have **Owner** role in the subscription. The user will assign a contributor role to an AAD application that Windows Admin Center creates.
  
 ## Set up AKS cluster on Azure Stack HCI
 
@@ -79,7 +86,7 @@ Before launching Windows Admin Center, we have to set trusted sites and allowed 
 
    Open Windows Admin Center and connect to Azure. As the user we are using has permission to create AAD app (it is **Application administrator** role in the tenant), we sugguest your to select **Create New** under **Connect to Azure Active Directory**.
 
-6. Set up AKS cluster in CHI. Follow this [document](https://github.com/Azure/aks-hci/blob/main/eval/steps/2a_DeployAKSHCI_WAC.md#deploying-aks-on-azure-stack-hci-management-cluster) to set up AKS. Please stop before clicking **Apply**.
+5. Set up AKS cluster in CHI. Follow this [document](https://github.com/Azure/aks-hci/blob/main/eval/steps/2a_DeployAKSHCI_WAC.md#deploying-aks-on-azure-stack-hci-management-cluster) to set up AKS. Please stop before clicking **Apply**.
 
     After inputing the configurations, in the **Review** page, you should find settings like:
 
@@ -95,8 +102,109 @@ Before launching Windows Admin Center, we have to set trusted sites and allowed 
     After the deployment finished, the API permission status should be updated, like:
     ![Grant Admin Consent](resources/screenshot-grant-admin-consent2.png)
 
-    Now you can lick **Apply** to apply the configuration and set up AKS cluster.
+    Now you can lick **Apply** to apply the configuration and set up AKS cluster. It takes about 20min for the deployment. After the process finishes, you should find:
+
+    ![Set up AKS completed](resources/screenshot-complete-aks-setup.png)
+
+6. Create target cluster. Now you have set up management cluster in your HCI environment, but you still need to create AKS cluster for WebLogic.
+
+    Follow step in [Create Target Cluster](https://github.com/Azure/aks-hci/blob/main/eval/steps/2a_DeployAKSHCI_WAC.md#create-a-kubernetes-cluster-target-cluster) to create an AKS cluster.
+
+    This sample use the following settings:
+
+    ![Set up AKS target cluster](resources/screenshot-aks-cluster.png)
+
+    It takes about 20 min to set up target cluster.
 
 ### Connect to Azure Arc AKS
+
+Now, you should have Azure Arc-enabled AKS cluster, you can managed the cluster outside the VM machine.
+
+Let's have a look at the Arc AKS from Azure portal, your aks name should be `my-workload-cluster` if you didn't change the cluster name:
+
+![Azure Arc-enabled AKS cluster](resources/screenshot-azure-arc-aks.png)
+
+While when you click **Workloads**, you are asked to sign in to view your Kubernetets resources.
+
+Document [Use Cluster Connect to connect to Azure Arc-enabled Kubernetes clusters](https://docs.microsoft.com/en-us/azure/azure-arc/kubernetes/cluster-connect#prerequisites) introduces two options to connect the cluster.
+
+As we need admin role to create the WebLogic operator and deploy WebLogic cluster, this sample will guide you to connect to the cluster using service account token.
+
+Open Windows Admin Center, click the server you are working on, here is `akshcihost1213.akshci.local`. Click **PowerShell** on the left, the Tools Navigation.
+
+After the PowerShell console launches, you are connected to the machine successfully if you find text like:
+
+```text
+Connecting to akshcihost1213.akshci.local, Logon user AKSHCIHost1213\AzureUser
+[akshcihost1213.akshci.local]: PS C:\Users\AzureUser\Documents>
+```
+
+Import HCI modules by running the following commands:
+
+```powershell
+
+Import-Module AksHci
+Get-Command -Module AksHci
+```
+
+Query cluster information:
+
+```powershell
+
+Get-AksHciCluster
+```
+
+Output of this sample:
+
+```text
+Status                : {ProvisioningState, Details}
+ProvisioningState     : Deployed
+KubernetesVersion     : v1.21.2
+PackageVersion        : v1.21.2-kvapkg.2
+NodePools             : linuxnodepool
+WindowsNodeCount      : 0
+LinuxNodeCount        : 3
+ControlPlaneNodeCount : 1
+Name                  : my-workload-cluster
+```
+
+To retrieve the kubeconfig file for the cluster, you'll need to run the following command:
+
+```powershell
+Get-AksHciCredential -Name akshciclus001 -Confirm:$false
+dir $env:USERPROFILE\.kube
+```
+
+Now, you can use `kubectl` to manage the cluster. The HCI Hyper-V host has installed `kubectl`, you can use it in the PowerShell console.
+
+We need a service account to connect to the AKS cluster. Create a service account in any namespace and grant it with `cluster-admin` role, see this [document](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#kubectl-create-rolebinding) for more information. Run the following command in the PowerShell console.
+
+```powershell
+kubectl create serviceaccount admin-user
+kubectl create clusterrolebinding admin-user-binding --clusterrole cluster-admin --serviceaccount default:admin-user
+
+$SECRET_NAME=$(kubectl get serviceaccount admin-user -o jsonpath='{$.secrets[0].name}')
+$RAWTOKEN=$(kubectl get secret $SECRET_NAME -o jsonpath='{$.data.token}')
+$TOKEN=[Text.Encoding]::Utf8.GetString([Convert]::FromBase64String($RAWTOKEN))
+
+echo $TOKEN
+```
+
+Now you have to token to access the AKS cluster. Copy the token to a file, make sure the string is one line string, you may have to remove the new lines manually.
+
+Open Azure Arc-enabled AKS cluster, input the token to sign in the cluster. 
+
+![Sign in AKS cluster](resources/screenshot-sign-in-aks-cluster.png)
+
+You should be able to access the AKS resource from Azure portal.
+
+![Sign in AKS cluster](resources/screenshot-aks-namespaces.png)
+
+
+With the token, we can manage the AKS cluster resource in the development machine, you are required to use a Linux machine, WSL in Windows machine, or Azure Cloud Shell.
+
+This sample set up WebLogic cluster using WSL terminal from Windows 11 machine.
+
+
 
 
