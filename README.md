@@ -22,6 +22,7 @@ In this guide, you'll walk through the steps to run Oracle WebLogic Server on Az
   - [Connect to Azure Arc AKS](#connect-to-azure-arc-aks)
 - [Deploy WebLoigc Server with domain on a PV]()
   - [Enable NFS server for storage]()
+  - [Create Persistent Volumn]()
   - [Install Oracle WebLogic Server Kubernetes Operator]()
   - [Deploy Weblogic cluster]()
   - [Expose WebLogic cluster via Load Balancer]()
@@ -257,6 +258,8 @@ kube-system       Active   113m
 
 Before moving forward, we still have to create storage for the domain, as we will store the domain configuration to a PV.
 
+### Enable NFS server for storage
+
 This sample will enable the NFS server in the Hyper-V host, the Windows Server 2022 Azure VM. Follow this [guide](https://docs.microsoft.com/en-us/windows-server/storage/nfs/deploy-nfs) to eable NFS server and create NFS share.
 
 This sample use Server Manager to create NFS share in the Azure VM. 
@@ -277,7 +280,7 @@ Then create NFS share.
 5. On the Share Location page, select a server and select **volume V**, and select Next.
 6. On the Share Name page, specify a name for the new share, here is `NFSShare`, and select Next.
 7. On the Authentication page, specify all the authentication method. Enable **Allow unmapped user access by UID/GID**
-8. On the Share Permissions page, select All Machines and enable Allow root access.
+8. On the Share Permissions page, select **All Machines**, share permissions are **Read/Write**, and enable **Allow root access**.
 9. In Permissions, configure the type of access control you want the users to have, and select OK.
 10. On the Confirmation page, review your configuration, and select Create to create the NFS file share.
 
@@ -287,8 +290,93 @@ After the process finished, you should be able to find the file share from Windo
 
 ![Create NSF Share](resources/screenshot-nfsshare2.png)
 
-Now, we cn move on to create WebLogic cluster.
+Now, we can move on to create persistent volumn.
 
+
+### Create Persistent Volumn
+
+This sample install NFS server in the same machine of HCI infrastructure. The NFS server is `akshcihost1213.akshci.local`.
+
+Before attaching pv to the AKS cluster, we have enable the CSI driver in the HCI AKS cluster, for more information, see this [document](https://docs.microsoft.com/en-us/azure-stack/aks-hci/container-storage-interface-files#use-nfs-drivers).
+
+Now, you have to connect to the Hyper-V host, open the Azure VM using Remote Connect Desktop, with user `azureuser`.
+
+Open PowerShell from Windows Admin Center, and run the following command:
+
+```powsershell
+Install-AksHciCsiNfs -clusterName my-workload-cluster
+```
+
+After the command finished, you should find csi-nfs pods are running:
+
+```powershell
+kubectl get pod -n kube-system
+
+NAME                                              READY   STATUS    RESTARTS   AGE
+csi-nfs-controller-68b79c85c9-dtqjf               3/3     Running   0          56s
+csi-nfs-node-g8d8s                                3/3     Running   0          56s
+csi-nfs-node-h88xn                                3/3     Running   0          56s
+csi-nfs-node-tm2v5                                3/3     Running   0          56s
+... ...
+```
+
+Now let's switch to your develoment machine.
+
+Create storage class for NFS share with the following configurations, make sure the server endpoint is matched with your NFS server. You can find the sample config from [nfs-storage-class.yaml](domain-on-pv/nfs-storage-class.yaml)
+
+```YAML
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-csi
+provisioner: nfs.csi.akshci.com
+parameters:
+  server: akshcihost1213.akshci.local # NFS server endpoint
+  share: /NFSShare # NFS share path
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+mountOptions:
+  - hard
+  - nfsvers=4.1
+```
+
+Run the following command in your WSL terminal, we assume your haven't close the AKS connection proxy.
+
+```bash
+kubectl apply -f domain-on-pv/nfs-storage-class.yaml
+```
+
+Create persistent volumn claim using the following configurations. You can find the sample config from [nfs-csi-pvc.yaml](domain-on-pv/nfs-csi-pvc.yaml)
+
+```YALM
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: wls-on-aks-in-hci
+  labels:
+    weblogic.domainUID: domain1
+spec:
+  storageClassName: nfs-csi
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+```
+
+```bash
+kubectl apply -f domain-on-pv/nfs-csi-pvc.yaml
+```
+
+Validate the PVC, make sure the status is Bound!
+
+```text
+$ kubectl get pvc
+NAME                STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+wls-on-aks-in-hci   Bound    pvc-244d98f4-318d-4777-b22e-4e2733493d97   5Gi        RWX            nfs-csi        107s
+```
+
+Now, you are able to create your WebLogic cluster with domain on the PV.
 
 
 
