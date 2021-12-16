@@ -324,6 +324,13 @@ Now let's switch to your development machine.
 
 Create storage class for NFS share with the following configurations, make sure the server endpoint is matched with your NFS server. You can find the sample config from [nfs-storage-class.yaml](domain-on-pv/nfs-storage-class.yaml)
 
+Pay attension to the following parameters:
+
+| Name in YAML file | Example value | Notes |
+|-------------------|---------------|-------|
+| `parameters.server` | `akshcihost1213.akshci.local` | NFS Server endpoint. Make sure the NSF share is accessible externally. |
+| `parameters.share`  | `/NFSShare` | You are able to find the share path from the NFS share properties. |
+
 ```YAML
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -346,7 +353,8 @@ Run the following command in your WSL terminal, we assume your haven't close the
 kubectl apply -f domain-on-pv/nfs-storage-class.yaml
 ```
 
-Create persistent volumn claim using the following configurations. You can find the sample config from [nfs-csi-pvc.yaml](domain-on-pv/nfs-csi-pvc.yaml)
+Create persistent volumn claim using the following configurations. You can find the sample config from [nfs-csi-pvc.yaml](domain-on-pv/nfs-csi-pvc.yaml).
+Make sure the `storageClassName` is matched with the storage class created in the last step.
 
 ```YALM
 kind: PersistentVolumeClaim
@@ -496,6 +504,152 @@ Here lists the commands:
     domain1-managed-server1                           0/1     Running             0          53s
     domain1-managed-server1                           1/1     Running             0          53s
     ```
+
+Now, you have a running WebLogic cluster with no application deployed. You can deploy application through WebLogic Administration Console. 
+While, currently, no one can access the WebLogic Administration Console outside the AKS cluster, we have to expose it first!
+
+### Expose WebLogic cluster via Load Balancer
+
+This sample will expose the Administration Server and the cluster with Azure Load Balancer services.
+
+You can create the Azure Load Balancer service to expose the Administration Server using configuration provided in [lb-admin.yaml](domain-on-pv/lb-admin.yaml), with the following content:
+
+```YAML
+apiVersion: v1
+kind: Service
+metadata:
+  name: domain1-admin-server-external-lb
+  namespace: default
+spec:
+  ports:
+  - name: default
+    port: 7001
+    protocol: TCP
+    targetPort: 7001
+  selector:
+    weblogic.domainUID: domain1
+    weblogic.serverName: admin-server
+  sessionAffinity: None
+  type: LoadBalancer
+```
+
+Run the follwowing command to apply the config.
+
+```bash
+kubectl apply -f domain-on-pv/lb-admin.yaml
+```
+
+You can create the Azure Load Balancer service to expose the cluster using configuration provided in [lb-admin.yaml](domain-on-pv/lb-cluster.yaml), with the following content:
+
+```YAML
+apiVersion: v1
+kind: Service
+metadata:
+  name: domain1-cluster-1-external-lb
+  namespace: default
+spec:
+  ports:
+  - name: default
+    port: 8001
+    protocol: TCP
+    targetPort: 8001
+  selector:
+    weblogic.domainUID: domain1
+    weblogic.clusterName: cluster-1
+  sessionAffinity: None
+  type: LoadBalancer
+```
+
+Run the following command to apply the config.
+
+```bash
+kubectl apply -f domain-on-pv/lb-cluster.yaml
+```
+
+You can check the service with `kubectl get svc` command:
+
+```text
+$ kubectl get svc
+NAME                               TYPE           CLUSTER-IP       EXTERNAL-IP     PORT(S)              AGE
+domain1-admin-server-external-lb   LoadBalancer   10.109.109.255   192.168.0.152   7001:32039/TCP       87s
+domain1-cluster-1-external-lb      LoadBalancer   10.106.141.145   192.168.0.153   8001:30754/TCP       4s
+... ...
+```
+
+Now you should be able to access the Administration Server from the HCI host. Open the Edge browser in your HCI machine, enter `http://<admin-server-external-ip>:7001/console`, here is `http://192.168.0.152:7001/console`, you shoule be able to open the login page.
+
+![Admin server from HCI host](resources/screenshot-admin-server-from-hci-host.png)
+
+But, you cannot access the URL outside the HCI machine. We have to expose the Administration Server to the internet with extra steps.
+
+1. Add an inbould role to the network security group. 
+
+  Follow this [guidance](https://github.com/Azure/aks-hci/blob/main/eval/steps/3_ExploreAKSHCI.md#add-an-inbound-rule-to-your-nsg) to add the inbound port rule. For WebLogic Server in this sample, we have to allow traffic to the Administration Server via port `7001` and to the cluster via port `8001`.
+
+  Here shows the NSG rule for this sample:
+
+  ![NSG rule for port 7001 and 8001](resources/screenshot-nsg-7001-8001.png)
+
+2. Add new NAT Static Mapping
+
+  We have to NAT the incoming traffic through to the containerized application.
+
+  Please go back to the Windows Admin Center, and open Powershell, run the following commands to create new Static NAT Mapping.
+
+  For Oracle WebLogic Server Administration Server, the value of `InternalIPAddress` should be the `EXTERNAL-IP` of `domain1-admin-server-external-lb` servive, listed above.
+
+  ```powershell
+  Add-NetNatStaticMapping -NatName "AKSHCINAT" -Protocol TCP -ExternalIPAddress '0.0.0.0/24' -ExternalPort 7001 `
+      -InternalIPAddress '192.168.0.152' -InternalPort 7001
+  ```
+
+  You will get output like:
+
+  ```text
+  StaticMappingID               : 0
+  NatName                       : AKSHCINAT
+  Protocol                      : TCP
+  RemoteExternalIPAddressPrefix : 0.0.0.0/0
+  ExternalIPAddress             : 0.0.0.0
+  ExternalPort                  : 7001
+  InternalIPAddress             : 192.168.0.152
+  InternalPort                  : 7001
+  InternalRoutingDomainId       : {00000000-0000-0000-0000-000000000000}
+  Active                        : True
+  ```
+
+  For Oracle WebLogic Server cluster, the value of `InternalIPAddress` should be the `EXTERNAL-IP` of `domain1-cluster-1-external-lb` servive, listed above.
+
+  ```powershell
+  Add-NetNatStaticMapping -NatName "AKSHCINAT" -Protocol TCP -ExternalIPAddress '0.0.0.0/24' -ExternalPort 8001 `
+      -InternalIPAddress '192.168.0.153' -InternalPort 8001
+  ```
+
+  Now, you are able to access the Administration Server with address `http://<hci-vm-public-ip>:7001/console`, you can find the public IP address of the Azure VM with steps:
+
+  * Open the resource group that deployed in [Deploy Hyper-V host](#deploy-hyper-v-host).
+  * Open the Virtual Machine resource, you should find the Public IP address in the **Overview** page.
+
+  Now access the the Administration Server outside the VM.
+
+  ![Admin server from internet](resources/screenshot-admin-server-from-internet.png)
+
+### Deploy application
+
+Now you are able to deploy a Java EE application following steps in [Deploy sample application](https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/domain-on-pv/#deploy-sample-application).
+
+After the application is active, you can access it with address `http://<hci-vm-public-ip>:8001/<your-app>`, address of this sample is `http://20.124.197.38:8001/testwebapp`
+
+![Access application](resources/screenshot-application.png)
+
+You can access WebLogic Server log from the NFS share. 
+
+![Logs](resources/screenshot-logs-on-pv.png)
+
+
+
+
+
 
 
 
