@@ -27,7 +27,7 @@ In this guide, you'll walk through the steps to run Oracle WebLogic Server on Az
   - [Deploy Weblogic cluster](#deploy-weblogic-cluster)
   - [Expose WebLogic cluster via Load Balancer](#expose-weblogic-cluster-via-load-balancer)
   - [Deploy application](#deploy-application)
-- [Deploy WebLoigc Server with model in imgae]()
+- [Deploy WebLoigc Server with model in image]()
   - [Build WebLogic image and push to ACR]()
   - [Install Oracle WebLogic Server Kubernetes Operator]()
   - [Deploy Weblogic cluster]()
