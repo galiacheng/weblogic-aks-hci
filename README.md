@@ -32,8 +32,8 @@ In this guide, you'll walk through the steps to run Oracle WebLogic Server on Az
   - [Install Oracle WebLogic Server Kubernetes Operator](#install-oracle-weblogic-server-kubernetes-operator-1)
   - [Deploy Oracle WebLogic Server](#deploy-oracle-weblogic-server-cluster)
   - [Expose applications via Ingress controller](#expose-application-via-ingress-controller)
-- [CI/CD consideration]()
 - [Clean up resources]()
+- [CI/CD consideration]()
 
 ## Architecture
 
@@ -192,7 +192,7 @@ $TOKEN=[Text.Encoding]::Utf8.GetString([Convert]::FromBase64String($RAWTOKEN))
 echo $TOKEN
 ```
 
-Now you have to token to access the AKS cluster. Copy the token to a file, make sure the string is one line string, you may have to remove the new lines manually.
+Now you have token to access the AKS cluster. Copy the token to a file, make sure the string is one line string, you may have to remove the new lines manually.
 
 Open Azure Arc-enabled AKS cluster, input the token to sign in the cluster. 
 
