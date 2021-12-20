@@ -24,14 +24,14 @@ In this guide, you'll walk through the steps to run Oracle WebLogic Server on Az
   - [Enable NFS server for storage](#enable-nfs-server-for-storage)
   - [Create Persistent Volumn Claim](#create-persistent-volumn-claim)
   - [Install Oracle WebLogic Server Kubernetes Operator](#install-oracle-weblogic-server-kubernetes-operator)
-  - [Deploy Weblogic cluster](#deploy-weblogic-cluster)
-  - [Expose WebLogic cluster via Load Balancer](#expose-weblogic-cluster-via-load-balancer)
+  - [Deploy Oracle WebLogic Server](#deploy-weblogic-cluster)
+  - [Expose applications via Load Balancer](#expose-weblogic-cluster-via-load-balancer)
   - [Deploy application](#deploy-application)
-- [Deploy WebLoigc Server with model in image]()
-  - [Build WebLogic image and push to ACR]()
-  - [Install Oracle WebLogic Server Kubernetes Operator]()
-  - [Deploy Weblogic cluster]()
-  - [Expose application via Ingress Controller]()
+- [Deploy WebLoigc Server with model in image](#deploy-webloigc-server-with-model-in-image)
+  - [Create docker image and push to ACR](#create-docker-image-and-push-to-acr)
+  - [Install Oracle WebLogic Server Kubernetes Operator](#install-oracle-weblogic-server-kubernetes-operator-1)
+  - [Deploy Oracle WebLogic Server](#deploy-oracle-weblogic-server-cluster)
+  - [Expose applications via Ingress Controller](#expose-application-via-ingress-controller)
 - [CI/CD consideration]()
 - [Clean up resources]()
 
@@ -583,7 +583,7 @@ Now you should be able to access the Administration Server from the HCI host. Op
 
 But, you cannot access the URL outside the HCI machine. We have to expose the Administration Server to the internet with extra steps.
 
-1. Add an inbould role to the network security group. 
+1. Add an inbould rule to the network security group. 
 
   Follow this [guidance](https://github.com/Azure/aks-hci/blob/main/eval/steps/3_ExploreAKSHCI.md#add-an-inbound-rule-to-your-nsg) to add the inbound port rule. For WebLogic Server in this sample, we have to allow traffic to the Administration Server via port `7001` and to the cluster via port `8001`.
 
