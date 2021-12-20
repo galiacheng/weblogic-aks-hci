@@ -789,7 +789,7 @@ sample-domain1-managed-server2      0/1     Running             0          44s
 sample-domain1-managed-server2      1/1     Running             0          103s
 ```
 
-### Expose application via Ingress Controller
+### Expose application via Ingress controller
 
 Now, you have set up WebLogic Server cluster in your HCI AKS cluster. To access the Administration Server and the cluster, you have to expose them. This sample will introduce two approaches to expose the workload:
 
@@ -823,7 +823,7 @@ We will create NGNIX ingress for WebLogic Server workloads with basic configurat
     ingress-nginx-controller   LoadBalancer   10.99.145.107   192.168.0.152   80:30580/TCP,443:32406/TCP   73s   app.kubernetes.io/component=controller,app.kubernetes.io/instance=ingress-nginx,app.kubernetes.io/name=ingress-nginx
     ```
 
-    Please note down the extenal IP of the ingress controller, we will use it in the later steps. Here is `192.168.0.152`
+    Please note down the extenal IP of the ingress controller, we will use it in the step 4. Here is `192.168.0.152`
 
 2. Create ingress for the WebLogic Server workload
 
