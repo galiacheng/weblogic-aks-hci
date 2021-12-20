@@ -194,11 +194,11 @@ echo $TOKEN
 
 Now you have token to access the AKS cluster. Copy the token to a file, make sure the string is one line string, you may have to remove the new lines manually.
 
-Open Azure Arc-enabled AKS cluster, input the token to sign in the cluster. 
+You can access the AKS cluster from Azure portal, open the Azure Arc-enabled AKS cluster, input the token to sign in the cluster. 
 
 ![Sign in AKS cluster](resources/screenshot-sign-in-aks-cluster.png)
 
-You should be able to access the AKS resource from Azure portal.
+You should be able to access the AKS resource.
 
 ![Sign in AKS cluster](resources/screenshot-aks-namespaces.png)
 
