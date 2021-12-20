@@ -905,9 +905,7 @@ We will create NGNIX ingress for WebLogic Server workloads with basic configurat
 
 3. Add an inbould rule to the network security group
 
-    in/eval/steps/3_ExploreAKSHCI.md#add-an-inbound-rule-to-your-nsg0) to create the rule.
-
-    You will create a rule with the following config:
+    You will create a rule to allow HTTP traffic to port 80 with the following config:
 
     ![Allow HTTP](resources/screenshot-allow-http.png)
 
@@ -919,7 +917,7 @@ We will create NGNIX ingress for WebLogic Server workloads with basic configurat
 
     The vallue of `InternalIPAddress` should be the external IP of the ingress controller service that is abtained in step 1.
 
-    We create the ingress using the default port 80.
+    We create the ingress using the default port 80. Let's map with external port 80 also.
 
     ```powershell
     Add-NetNatStaticMapping -NatName "AKSHCINAT" -Protocol TCP -ExternalIPAddress '0.0.0.0/24' -ExternalPort 80 `
@@ -941,7 +939,7 @@ We will create NGNIX ingress for WebLogic Server workloads with basic configurat
     Active                        : True
     ```
 
-    Now you are able to access the WebLogic Server workload:
+    Now you are able to access the WebLogic Server workload with URLs:
     
     ```bash
     # Administration Server
