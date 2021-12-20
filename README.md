@@ -33,6 +33,7 @@ In this guide, you'll walk through the steps to run Oracle WebLogic Server on Az
   - [Deploy Weblogic cluster]()
   - [Expose application via Ingress Controller]()
 - [CI/CD consideration]()
+- [Clean up resources]()
 
 ## Architecture
 
@@ -647,6 +648,148 @@ You can access WebLogic Server log from the NFS share.
 ![Logs](resources/screenshot-logs-on-pv.png)
 
 
+## Deploy WebLoigc Server with model in image
+
+This section will walk you through how to create Oracle WebLogic Server with [model in image](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/) on AKS from Azure HCI.
+
+You can find more information for running Oracle WebLogic Server on AKS with model in image in this [document](https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/model-in-image).
+
+Here, you have set up AKS target clsuter in the Azure HCI infrastructure. Before deploying the WebLogic Server cluster to your AKS, we need a docker image which contains JDK, WebLogic Server, [WebLogic Model files](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/model-files/), and [WebLogic Deploy Tool](https://oracle.github.io/weblogic-deploy-tooling/).
+
+### Create docker image and push to ACR
+
+You can find detail steps in [Create Docker Image](https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/model-in-image/#create-docker-image).
+
+After you finish the steps, you should have an ACR with docker image.
+
+You have to enable **Admin user** in the ACR, see the following screenshot. 
+
+![Logs](resources/screenshot-acr-login-info.png)
+
+Set the following connection variables in your development machine, this sample uses WSL terminal:
+
+```bash
+LOGIN_SERVER=<copy-value-from-login-server>
+ACR_USER=<copy-value-from-username>
+ACR_PASSWORD=<copy-value-from-password>
+```
+
+We will use the variables to create Kubernetes secret to pull the image.
+
+### Install Oracle WebLogic Server Kubernetes Operator
+
+Run the following commands in your develoment machine, this sample uses WSL terminal, to install Oracle WebLogic Server Kubernetes Operator:
+
+```bash
+# create namespace
+kubectl create namespace sample-weblogic-operator-ns
+# create serviceaccount
+kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
+
+# add charts repo
+helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
+# install wls operator
+helm install weblogic-operator weblogic-operator/weblogic-operator \
+        --namespace sample-weblogic-operator-ns \
+        --set serviceAccount=sample-weblogic-operator-sa \
+        --set "enableClusterRoleBinding=true" \
+        --set "domainNamespaceSelectionStrategy=LabelSelector" \
+        --set "domainNamespaceLabelSelector=weblogic-operator\=enabled" \
+        --version 3.3.6 \
+        --wait
+```
+
+You should find the operator is running:
+
+```text
+$ kubectl get pods -n sample-weblogic-operator-ns
+NAME                                 READY   STATUS    RESTARTS   AGE
+weblogic-operator-744cfc8694-hljdd   1/1     Running   0          53s
+```
+
+We will use sample scripts from [WebLogic Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to create WebLogic cluster, please clone the repository before going on.
+
+```bash
+git clone --branch v3.3.6 https://github.com/oracle/weblogic-kubernetes-operator.git
+```
+
+### Deploy Oracle Weblogic Server cluster
+
+Now, have WebLogic docker image ready in the ACR, you have installed the Oracle WebLogic Server Kubernetes Operator, you are ready to deploy the Oracle WebLogic Server cluster.
+
+You can find the detail steps from [Create WebLogic domain](https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/model-in-image/#create-weblogic-domain), here lists the commands:
+
+```bash
+# create namespace
+kubectl create namespace sample-domain1-ns
+
+# label the domain namespace so that the operator can autodetect and create WebLogic Server pods
+kubectl label namespace sample-domain1-ns weblogic-operator=enabled
+
+# create secret for WebLogic administrator credentials and label the secret
+kubectl -n sample-domain1-ns create secret generic \
+  sample-domain1-weblogic-credentials \
+   --from-literal=username=weblogic --from-literal=password=welcome1
+
+kubectl -n sample-domain1-ns label  secret \
+  sample-domain1-weblogic-credentials \
+  weblogic.domainUID=sample-domain1
+
+# create secret the WDT runtime
+kubectl -n sample-domain1-ns create secret generic \
+  sample-domain1-runtime-encryption-secret \
+   --from-literal=password=welcome1
+
+kubectl -n sample-domain1-ns label  secret \
+  sample-domain1-runtime-encryption-secret \
+  weblogic.domainUID=sample-domain1
+
+# Use kubernetes/samples/scripts/create-kubernetes-secrets/create-docker-credentials-secret.sh to create the secret for ACR login
+export SECRET_NAME_DOCKER="regsecret"
+cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-kubernetes-secrets
+./create-docker-credentials-secret.sh -s ${SECRET_NAME_DOCKER} -e $ACR_USER -p $ACR_PASSWORD -u $ACR_USER -d $LOGIN_SERVER -n sample-domain1-ns
+```
+
+Now, we will defind the domain custom resource using a YAML file, you can find the content from [domain.yaml](model-in-image/domain.yaml), make sure you have repalce the image path with your ACR image path.
+
+- `spec.image`: your image path from the ACR. You can find the path from portal: Open ACR resource -> Services -> Repositories -> select your repository - > select the image you want to apply, you can find the whole path from **Docker pull command**. The path should consist of `<acr-login-server>/<repository-path>:<tag>`.
+
+Apply the configuration to the AKS cluster: 
+
+```bash
+kubectl apply -f model-in-image/domain.yaml
+```
+
+If the domain is deployed successfully, you should find output like:
+
+```bash
+$ kubectl get pods -n sample-domain1-ns --watch
+NAME                                READY   STATUS    RESTARTS   AGE
+sample-domain1-introspector-2pfp8   1/1     Running   0          7s
+sample-domain1-introspector-2pfp8   0/1     Completed   0          71s
+sample-domain1-introspector-2pfp8   0/1     Terminating   0          71s
+sample-domain1-introspector-2pfp8   0/1     Terminating   0          71s
+sample-domain1-admin-server         0/1     Pending       0          0s
+sample-domain1-admin-server         0/1     Pending       0          0s
+sample-domain1-admin-server         0/1     ContainerCreating   0          0s
+sample-domain1-admin-server         0/1     ContainerCreating   0          1s
+sample-domain1-admin-server         0/1     Running             0          2s
+sample-domain1-admin-server         1/1     Running             0          35s
+sample-domain1-managed-server1      0/1     Pending             0          0s
+sample-domain1-managed-server1      0/1     Pending             0          0s
+sample-domain1-managed-server1      0/1     ContainerCreating   0          0s
+sample-domain1-managed-server2      0/1     Pending             0          0s
+sample-domain1-managed-server2      0/1     Pending             0          0s
+sample-domain1-managed-server2      0/1     ContainerCreating   0          0s
+sample-domain1-managed-server2      0/1     ContainerCreating   0          1s
+sample-domain1-managed-server1      0/1     ContainerCreating   0          1s
+sample-domain1-managed-server1      0/1     Running             0          3s
+sample-domain1-managed-server1      1/1     Running             0          43s
+sample-domain1-managed-server2      0/1     Running             0          44s
+sample-domain1-managed-server2      1/1     Running             0          103s
+```
+
+### Expose application via Ingress Controller
 
 
 
