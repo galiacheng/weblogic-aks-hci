@@ -31,7 +31,7 @@ In this guide, you'll walk through the steps to run Oracle WebLogic Server on Az
   - [Create docker image and push to ACR](#create-docker-image-and-push-to-acr)
   - [Install Oracle WebLogic Server Kubernetes Operator](#install-oracle-weblogic-server-kubernetes-operator-1)
   - [Deploy Oracle WebLogic Server](#deploy-oracle-weblogic-server-cluster)
-  - [Expose applications via Ingress Controller](#expose-application-via-ingress-controller)
+  - [Expose applications via Ingress controller](#expose-application-via-ingress-controller)
 - [CI/CD consideration]()
 - [Clean up resources]()
 
