@@ -806,156 +806,157 @@ We will create NGNIX ingress for WebLogic Server workloads with basic configurat
 
 1. Use helm to create a simple NGINX ingress controller.
 
-  ```bash
-  NAMESPACE=ingress-basic
+    ```bash
+    NAMESPACE=ingress-basic
 
-  helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-  helm repo update
+    helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+    helm repo update
 
-  helm install ingress-nginx ingress-nginx/ingress-nginx --create-namespace --namespace $NAMESPACE
-  ```
+    helm install ingress-nginx ingress-nginx/ingress-nginx --create-namespace --namespace $NAMESPACE
+    ```
 
-  After the creation finishes, run the following command to check the load balancer service:
+    After the creation finishes, run the following command to check the load balancer service:
 
-  ```text
-  $ kubectl --namespace ingress-basic get services -o wide -w ingress-nginx-controller
-  NAME                       TYPE           CLUSTER-IP      EXTERNAL-IP     PORT(S)                      AGE   SELECTOR
-  ingress-nginx-controller   LoadBalancer   10.99.145.107   192.168.0.152   80:30580/TCP,443:32406/TCP   73s   app.kubernetes.io/component=controller,app.kubernetes.io/instance=ingress-nginx,app.kubernetes.io/name=ingress-nginx
-  ```
+    ```text
+    $ kubectl --namespace ingress-basic get services -o wide -w ingress-nginx-controller
+    NAME                       TYPE           CLUSTER-IP      EXTERNAL-IP     PORT(S)                      AGE   SELECTOR
+    ingress-nginx-controller   LoadBalancer   10.99.145.107   192.168.0.152   80:30580/TCP,443:32406/TCP   73s   app.kubernetes.io/component=controller,app.kubernetes.io/instance=ingress-nginx,app.kubernetes.io/name=ingress-nginx
+    ```
 
-  Please note down the extenal IP of the ingress controller, we will use it in the later steps. Here is `192.168.0.152`
+    Please note down the extenal IP of the ingress controller, we will use it in the later steps. Here is `192.168.0.152`
 
 2. Create ingress for the WebLogic Server workload
 
-  Apply the configuration from `model-in-image/ingress-admin.yaml` to create ingress for the Administration Server. Here lists the content of the file, make sure the namespace and service name are correct.
+    Apply the configuration from `model-in-image/ingress-admin.yaml` to create ingress for the Administration Server. Here lists the content of the file, make sure the namespace and service name are correct.
 
-  ```YAML
-  apiVersion: networking.k8s.io/v1
-  kind: Ingress
-  metadata:
-    name: ingress-sample-domain1-admin-server
-    namespace: sample-domain1-ns
-    annotations:
-      kubernetes.io/ingress.class: nginx
-  spec:
-    rules:
-    - host:
-      http:
-        paths:
-        - path: /console
-          pathType: Prefix
-          backend:
-            service:
-              name: sample-domain1-admin-server
-              port: 
-                number: 7001
-  ```
+    ```YAML
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      name: ingress-sample-domain1-admin-server
+      namespace: sample-domain1-ns
+      annotations:
+        kubernetes.io/ingress.class: nginx
+    spec:
+      rules:
+      - host:
+        http:
+          paths:
+          - path: /console
+            pathType: Prefix
+            backend:
+              service:
+                name: sample-domain1-admin-server
+                port: 
+                  number: 7001
+    ```
 
-  Run the command to apply the configuration:
+    Run the command to apply the configuration:
 
-  ```bash
-  kubectl apply -f model-in-image/ingress-admin.yaml
-  ```
+    ```bash
+    kubectl apply -f model-in-image/ingress-admin.yaml
+    ```
 
-  Apply the configuration from `model-in-image/ingress-cluster.yaml` to create ingress for the cluster. Here lists the content of the file, make sure the namespace and service name are correct. The configuration rewrite the cluster root path with `/applications`, you can access the Java EE applications which have been deployed to the WebLogic Server cluster with URL `http://<ip>:<port>/applications/<your-application>`
+    Apply the configuration from `model-in-image/ingress-cluster.yaml` to create ingress for the cluster. Here lists the content of the file, make sure the namespace and service name are correct. The configuration rewrite the cluster root path with `/applications`, you can access the Java EE applications which have been deployed to the WebLogic Server cluster with URL `http://<ip>:<port>/applications/<your-application>`
 
-  ```YAML
-  apiVersion: networking.k8s.io/v1
-  kind: Ingress
-  metadata:
-    name: ingress-sample-domain1-cluster-cluster-1
-    namespace: sample-domain1-ns
-    annotations:
-      kubernetes.io/ingress.class: nginx
-      nginx.ingress.kubernetes.io/rewrite-target: /$1
-  spec:
-    rules:
-    - host:
-      http:
-        paths:
-        - path: /applications(.+)
-          pathType: Prefix
-          backend:
-            service:
-              name: sample-domain1-cluster-cluster-1
-              port: 
-                number: 8001
-  ```
+    ```YAML
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      name: ingress-sample-domain1-cluster-cluster-1
+      namespace: sample-domain1-ns
+      annotations:
+        kubernetes.io/ingress.class: nginx
+        nginx.ingress.kubernetes.io/rewrite-target: /$1
+    spec:
+      rules:
+      - host:
+        http:
+          paths:
+          - path: /applications(.+)
+            pathType: Prefix
+            backend:
+              service:
+                name: sample-domain1-cluster-cluster-1
+                port: 
+                  number: 8001
+    ```
 
-  Run the command to apply the configuration:
+    Run the command to apply the configuration:
 
-  ```bash
-  kubectl apply -f model-in-image/ingress-cluster.yaml
-  ```
+    ```bash
+    kubectl apply -f model-in-image/ingress-cluster.yaml
+    ```
 
-  You should find the ingress with commands:
+    You should find the ingress with commands:
 
-  ```text
-  $ kubectl get ingress -n sample-domain1-ns
-  NAME                                       CLASS    HOSTS   ADDRESS         PORTS   AGE
-  ingress-sample-domain1-admin-server        <none>   *       192.168.0.152   80      29m
-  ingress-sample-domain1-cluster-cluster-1   <none>   *       192.168.0.152   80      25m
-  ```
+    ```text
+    $ kubectl get ingress -n sample-domain1-ns
+    NAME                                       CLASS    HOSTS   ADDRESS         PORTS   AGE
+    ingress-sample-domain1-admin-server        <none>   *       192.168.0.152   80      29m
+    ingress-sample-domain1-cluster-cluster-1   <none>   *       192.168.0.152   80      25m
+    ```
 
-  Now, you can access the Administrator server and the cluster from the Azure HCI host, like:
+    Now, you can access the Administrator server and the cluster from the Azure HCI host, like:
 
-  ![Access WLS using ingress internally](resources/screenshot-access-wls-via-ingress-internally.png)
+    ![Access WLS using ingress internally](resources/screenshot-access-wls-via-ingress-internally.png)
 
-  While, you can not access the WebLogic Server workload outside the VM, we have to add new NAT Static Mapping.
+    While, you can not access the WebLogic Server workload outside the VM, we have to add new NAT Static Mapping.
 
 3. Add an inbould rule to the network security group
-  We have to add inbound rule to allow HTTP traffic to the HCI host. Follow the [guidance](https://github.com/Azure/aks-hci/blob/main/eval/steps/3_ExploreAKSHCI.md#add-an-inbound-rule-to-your-nsg0) to create the rule.
 
-  You will create a rule with the following config:
+    in/eval/steps/3_ExploreAKSHCI.md#add-an-inbound-rule-to-your-nsg0) to create the rule.
 
-  ![Allow HTTP](resources/screenshot-allow-http.png)
+    You will create a rule with the following config:
+
+    ![Allow HTTP](resources/screenshot-allow-http.png)
 
 4. Add new NAT Static Mapping
 
-  We have to NAT the incoming traffic through to the Ingress controller.
+    We have to NAT the incoming traffic through to the Ingress controller.
 
-  Please go back to the Windows Admin Center, and open Powershell, run the following commands to create new Static NAT Mapping.
+    Please go back to the Windows Admin Center, and open Powershell, run the following commands to create new Static NAT Mapping.
 
-  The vallue of `InternalIPAddress` should be the external IP of the ingress controller service that is abtained in step 1.
+    The vallue of `InternalIPAddress` should be the external IP of the ingress controller service that is abtained in step 1.
 
-  We create the ingress using the default port 80.
+    We create the ingress using the default port 80.
 
-  ```powershell
-  Add-NetNatStaticMapping -NatName "AKSHCINAT" -Protocol TCP -ExternalIPAddress '0.0.0.0/24' -ExternalPort 80 `
-    -InternalIPAddress '192.168.0.152' -InternalPort 80
-  ```
+    ```powershell
+    Add-NetNatStaticMapping -NatName "AKSHCINAT" -Protocol TCP -ExternalIPAddress '0.0.0.0/24' -ExternalPort 80 `
+      -InternalIPAddress '192.168.0.152' -InternalPort 80
+    ```
 
-  You will get output like:
+    You will get output like:
 
-  ```text
-  StaticMappingID               : 2
-  NatName                       : AKSHCINAT
-  Protocol                      : TCP
-  RemoteExternalIPAddressPrefix : 0.0.0.0/0
-  ExternalIPAddress             : 0.0.0.0
-  ExternalPort                  : 80
-  InternalIPAddress             : 192.168.0.152
-  InternalPort                  : 80
-  InternalRoutingDomainId       : {00000000-0000-0000-0000-000000000000}
-  Active                        : True
-  ```
+    ```text
+    StaticMappingID               : 2
+    NatName                       : AKSHCINAT
+    Protocol                      : TCP
+    RemoteExternalIPAddressPrefix : 0.0.0.0/0
+    ExternalIPAddress             : 0.0.0.0
+    ExternalPort                  : 80
+    InternalIPAddress             : 192.168.0.152
+    InternalPort                  : 80
+    InternalRoutingDomainId       : {00000000-0000-0000-0000-000000000000}
+    Active                        : True
+    ```
 
-  Now you are able to access the WebLogic Server workload:
+    Now you are able to access the WebLogic Server workload:
+    
+    ```bash
+    # Administration Server
+    http://<vm-public-ip>:80/console
+    # Application in the cluster
+    http://<vm-public-ip>:80/applications/testwebapp
+    ```
   
-  ```bash
-  # Administration Server
-  http://<vm-public-ip>:80/console
-  # Application in the cluster
-  http://<vm-public-ip>:80/applications/testwebapp
-  ```
- 
-  To access the Administration Server:
+    To access the Administration Server:
 
-  ![Administration Server](resources/screenshot-admin-server-2.png)
+    ![Administration Server](resources/screenshot-admin-server-2.png)
 
-  To access the sample application in the cluster:
+    To access the sample application in the cluster:
 
-  ![Application](resources/screenshot-cluster-2.png)
+    ![Application](resources/screenshot-cluster-2.png)
 
 
 
