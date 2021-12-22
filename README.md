@@ -587,7 +587,7 @@ domain1-cluster-1-external-lb      LoadBalancer   10.106.141.145   192.168.0.153
 ... ...
 ```
 
-Now you should be able to access the Administration Server from the HCI host. Open the Edge browser in your HCI machine, enter `http://<admin-server-external-ip>:7001/console`, here is `http://192.168.0.152:7001/console`, you shoule be able to open the login page.
+Now you should be able to access the Administration Server from the HCI host. Open the Edge browser in your HCI machine, enter `http://<admin-server-external-ip>:7001/console`, here is `http://192.168.0.152:7001/console`, you should be able to open the login page.
 
 ![Admin server from HCI host](resources/screenshot-admin-server-from-hci-host.png)
 
@@ -607,7 +607,7 @@ But, you cannot access the URL in the outside of the HCI machine. We have to exp
 
   Please go back to the Windows Admin Center, and open Powershell, run the following commands to create new Static NAT Mapping.
 
-  For Oracle WebLogic Server Administration Server, the value of `InternalIPAddress` should be the `EXTERNAL-IP` of `domain1-admin-server-external-lb` servive, listed above.
+  For Oracle WebLogic Server Administration Server, the value of `InternalIPAddress` should be the `EXTERNAL-IP` of `domain1-admin-server-external-lb` service, listed above.
 
   ```powershell
   Add-NetNatStaticMapping -NatName "AKSHCINAT" -Protocol TCP -ExternalIPAddress '0.0.0.0/24' -ExternalPort 7001 `
@@ -762,7 +762,9 @@ cd weblogic-kubernetes-operator/kubernetes/samples/scripts/create-kubernetes-sec
 
 Now, we will defind the domain custom resource using a YAML file, you can find the content from [domain.yaml](model-in-image/domain.yaml), make sure you have repalce the image path with your ACR image path.
 
-- `spec.image`: your image path from the ACR. You can find the path from portal: Open ACR resource -> Services -> Repositories -> select your repository - > select the image you want to apply, you can find the whole path from **Docker pull command**. The path should consist of `<acr-login-server>/<repository-path>:<tag>`.
+- `spec.image`: your image path from the ACR. 
+
+  You can find the path from portal: Open ACR resource -> Services -> Repositories -> select your repository - > select the image you want to apply, you can find the whole path from **Docker pull command**. The path should consist of `<acr-login-server>/<repository-path>:<tag>`.
 
 Apply the configuration to the AKS cluster: 
 
