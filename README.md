@@ -50,7 +50,7 @@ WIP
 
 - Development environment
 
-  The sample will run shell commands in a machine in outside of the Azure VM, to deploy Oracle WebLogic Server to the AKS in HCI. You are required to work with the following tools:
+  The sample will run shell commands in your development machine outside of the Azure VM, to deploy Oracle WebLogic Server to the AKS in HCI. You are required to work with the following tools:
   * Operating System: GNU/Linux, macOS or [WSL2 for Windows 10](https://docs.microsoft.com/windows/wsl/install-win10).
   * [Git](https://git-scm.com/downloads); use `git --version` to test if `git` works.  This document was tested with version 2.17.1.
   * [Azure CLI](https://docs.microsoft.com/cli/azure); use `az --version` to test if `az` works.  This document was tested with version 2.9.1.
