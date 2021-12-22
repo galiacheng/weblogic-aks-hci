@@ -6,7 +6,7 @@ In this guide, you'll walk through the steps to run Oracle WebLogic Server on Az
 
 * Deploy Nested Virtualization Azure Stack HCI infrastructure, to act as your main Hyper-V host
 * Deploy the AKS on Azure Stack HCI management cluster and target clusters for WebLogic workloads
-* Deploy WebLogic servers on the AKS cluster with NFS share enabled - you can moderize WebLogic workload via domain on pv and model in image
+* Deploy WebLogic servers on the AKS cluster - you can moderize WebLogic workload via domain on pv and model in image
 * Expose WebLoigc Administration Console and applications deployed to WebLogic cluster.
 
 
