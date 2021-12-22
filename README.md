@@ -33,7 +33,7 @@ In this guide, you'll walk through the steps to run Oracle WebLogic Server on Az
   - [Deploy Oracle WebLogic Server](#deploy-oracle-weblogic-server-cluster)
   - [Expose applications via Ingress controller](#expose-application-via-ingress-controller)
 - [Clean up resources]()
-- [CI/CD consideration]()
+- [CI/CD]()
 
 ## Architecture
 
@@ -955,6 +955,18 @@ We will create NGNIX ingress for WebLogic Server workloads with basic configurat
     To access the sample application in the cluster:
 
     ![Application](resources/screenshot-cluster-2.png)
+
+## Clean up resources
+
+  To clean up resource, delete the resource group you created in [Set up AKS cluster on Azure Stack HCI](#set-up-aks-cluster-on-azure-stack-hci), you may have two resource groups:
+
+  - The one has Azure VM deployed in [Deploy Hyper-V host](#deploy-hyper-v-host)
+
+  - The one you create Azure Arc in [Set up Azure HCI AKS cluster](#set-up-azure-hci-aks-cluster)
+
+## CI/CD
+
+You can leverage GitOps for CI/CD, see [Deploy configurations using GitOps on an Azure Arc-enabled Kubernetes cluster](https://docs.microsoft.com/en-us/azure/azure-arc/kubernetes/tutorial-use-gitops-connected-cluster)
 
 
 
