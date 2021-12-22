@@ -47,6 +47,16 @@ WIP
 
 - Azure Subscription.
   - The user should have **Owner** role in the subscription. The user will assign a contributor role to an AAD application that Windows Admin Center creates.
+
+- Development environment
+
+  The sample will run shell commands in a machine in outside of the Azure VM, to deploy Oracle WebLogic Server to the AKS in HCI. You are required to work with the following tools:
+  * Operating System: GNU/Linux, macOS or [WSL2 for Windows 10](https://docs.microsoft.com/windows/wsl/install-win10).
+  * [Git](https://git-scm.com/downloads); use `git --version` to test if `git` works.  This document was tested with version 2.17.1.
+  * [Azure CLI](https://docs.microsoft.com/cli/azure); use `az --version` to test if `az` works.  This document was tested with version 2.9.1.
+  * [Docker for Desktop](https://www.docker.com/products/docker-desktop).  This document was tested with `Docker version 20.10.2, build 2291f61`
+  * [kubectl](https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/); use `kubectl version` to test if `kubectl` works.  This document was tested with version v1.16.3.
+  * [Helm](https://helm.sh/docs/intro/install/), version 3.1 and later; use `helm version` to check the `helm` version.  This document was tested with version v3.2.5.
  
 ## Set up AKS cluster on Azure Stack HCI
 
@@ -120,7 +130,7 @@ Before launching Windows Admin Center, we have to set trusted sites and allowed 
 
 ### Connect to Azure Arc AKS
 
-Now, you should have Azure Arc-enabled AKS cluster, you can managed the cluster outside the VM machine.
+Now, you should have Azure Arc-enabled AKS cluster, you can managed the cluster in outside of the VM machine.
 
 Let's have a look at the Arc AKS from Azure portal, your aks name should be `my-workload-cluster` if you didn't change the cluster name:
 
@@ -207,7 +217,7 @@ With the token, we can manage the AKS cluster resource in the development machin
 
 This sample set up WebLogic cluster using WSL terminal from Windows 11 machine.
 
-Run the shell commands to connect to AKS outside the HCI host.
+Run the shell commands to connect to AKS in the outside of the HCI host.
 
 Install `connectedk8s` extension and enable the Cluster Connect the Arc-enabled Kubernetes cluster.
 
@@ -507,7 +517,7 @@ Here lists the commands:
     ```
 
 Now, you have a running WebLogic cluster with no application deployed. You can deploy application through WebLogic Administration Console. 
-While, currently, no one can access the WebLogic Administration Console outside the AKS cluster, we have to expose it first!
+While, currently, no one can access the WebLogic Administration Console in the outside of the AKS cluster, we have to expose it first!
 
 ### Expose WebLogic cluster via Load Balancer
 
@@ -581,7 +591,7 @@ Now you should be able to access the Administration Server from the HCI host. Op
 
 ![Admin server from HCI host](resources/screenshot-admin-server-from-hci-host.png)
 
-But, you cannot access the URL outside the HCI machine. We have to expose the Administration Server to the internet with extra steps.
+But, you cannot access the URL in the outside of the HCI machine. We have to expose the Administration Server to the internet with extra steps.
 
 1. Add an inbould rule to the network security group. 
 
@@ -631,7 +641,7 @@ But, you cannot access the URL outside the HCI machine. We have to expose the Ad
   * Open the resource group that deployed in [Deploy Hyper-V host](#deploy-hyper-v-host).
   * Open the Virtual Machine resource, you should find the Public IP address in the **Overview** page.
 
-  Now access the the Administration Server outside the VM.
+  Now access the the Administration Server in the outside of the VM.
 
   ![Admin server from internet](resources/screenshot-admin-server-from-internet.png)
 
@@ -901,7 +911,7 @@ We will create NGNIX ingress for WebLogic Server workloads with basic configurat
 
     ![Access WLS using ingress internally](resources/screenshot-access-wls-via-ingress-internally.png)
 
-    While, you can not access the WebLogic Server workload outside the VM, we have to add new NAT Static Mapping.
+    While, you can not access the WebLogic Server workload in the outside of the VM, we have to add new NAT Static Mapping.
 
 3. Add an inbould rule to the network security group
 
