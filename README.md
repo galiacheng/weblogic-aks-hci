@@ -32,8 +32,8 @@ In this guide, you'll walk through the steps to run Oracle WebLogic Server on Az
   - [Install Oracle WebLogic Server Kubernetes Operator](#install-oracle-weblogic-server-kubernetes-operator-1)
   - [Deploy Oracle WebLogic Server](#deploy-oracle-weblogic-server-cluster)
   - [Expose applications via Ingress controller](#expose-application-via-ingress-controller)
-- [Clean up resources](#clean-up-resources)
 - [CI/CD](#cicd)
+- [Clean up resources](#clean-up-resources)
 
 ## Architecture
 
@@ -968,14 +968,6 @@ We will create NGNIX ingress for WebLogic Server workloads with basic configurat
 
     ![Application](resources/screenshot-cluster-2.png)
 
-## Clean up resources
-
-  To clean up resource, delete the resource group you created in [Set up AKS cluster on Azure Stack HCI](#set-up-aks-cluster-on-azure-stack-hci), you may have two resource groups:
-
-  - The one has Azure VM deployed in [Deploy Hyper-V host](#deploy-hyper-v-host)
-
-  - The one you create Azure Arc in [Set up Azure HCI AKS cluster](#set-up-azure-hci-aks-cluster)
-
 ## CI/CD
 
 You can leverage GitOps for CI/CD, see [Deploy configurations using GitOps on an Azure Arc-enabled Kubernetes](https://docs.microsoft.com/en-us/azure/azure-arc/kubernetes/tutorial-use-gitops-connected-cluster)
@@ -983,6 +975,14 @@ You can leverage GitOps for CI/CD, see [Deploy configurations using GitOps on an
 Sample: [GitOps sample for running Oracle WebLogic Server on Azure Kubernetes Service](https://github.com/galiacheng/weblogic-aks-flux2-kustomize)
 
 Sample document to create GitOps in Azure Arc-enabled Kubernetes: [Use Gitops to run Oracle WebLogic Server on Azure Azure Arc-enabled Kubernetes](https://github.com/galiacheng/weblogic-aks-flux2-kustomize/blob/main/resources/docs/azure-arc-gitops.md)
+
+## Clean up resources
+
+  To clean up resource, delete the resource group you created in [Set up AKS cluster on Azure Stack HCI](#set-up-aks-cluster-on-azure-stack-hci), you may have two resource groups:
+
+  - The one has Azure VM deployed in [Deploy Hyper-V host](#deploy-hyper-v-host)
+
+  - The one you create Azure Arc in [Set up Azure HCI AKS cluster](#set-up-azure-hci-aks-cluster)
 
 
 
