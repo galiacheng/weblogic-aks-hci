@@ -33,6 +33,8 @@ In this guide, you'll walk through the steps to run Oracle WebLogic Server on Az
   - [Deploy Oracle WebLogic Server](#deploy-oracle-weblogic-server-cluster)
   - [Expose applications via Ingress controller](#expose-application-via-ingress-controller)
 - [CI/CD](#cicd)
+  - [Sample](#sample)
+  - [Demo Video](#demo-video)
 - [Clean up resources](#clean-up-resources)
 
 ## Architecture
@@ -972,9 +974,15 @@ We will create NGNIX ingress for WebLogic Server workloads with basic configurat
 
 You can leverage GitOps for CI/CD, see [Deploy configurations using GitOps on an Azure Arc-enabled Kubernetes](https://docs.microsoft.com/en-us/azure/azure-arc/kubernetes/tutorial-use-gitops-connected-cluster)
 
+### Sample
+
 Sample: [GitOps sample for running Oracle WebLogic Server on Azure Kubernetes Service](https://github.com/galiacheng/weblogic-aks-flux2-kustomize)
 
 Sample document to create GitOps in Azure Arc-enabled Kubernetes: [Use Gitops to run Oracle WebLogic Server on Azure Azure Arc-enabled Kubernetes](https://github.com/galiacheng/weblogic-aks-flux2-kustomize/blob/main/resources/docs/azure-arc-gitops.md)
+
+### Demo Video
+
+[![Use GitOps with Flux v2 to run Oracle WebLogic Server on Azure Kubernetes Service within Azure Stack HCI infrastructure](https://img.youtube.com/vi/DSxV-w9VXsI/0.jpg)](https://www.youtube.com/watch?v=DSxV-w9VXsI)
 
 ## Clean up resources
 
