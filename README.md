@@ -978,7 +978,11 @@ We will create NGNIX ingress for WebLogic Server workloads with basic configurat
 
 ## CI/CD
 
-You can leverage GitOps for CI/CD, see [Deploy configurations using GitOps on an Azure Arc-enabled Kubernetes cluster](https://docs.microsoft.com/en-us/azure/azure-arc/kubernetes/tutorial-use-gitops-connected-cluster)
+You can leverage GitOps for CI/CD, see [Deploy configurations using GitOps on an Azure Arc-enabled Kubernetes](https://docs.microsoft.com/en-us/azure/azure-arc/kubernetes/tutorial-use-gitops-connected-cluster)
+
+Sample: [GitOps sample for running Oracle WebLogic Server on Azure Kubernetes Service](https://github.com/galiacheng/weblogic-aks-flux2-kustomize)
+
+Sample document to create GitOps in Azure Arc-enabled Kubernetes: [Use Gitops to run Oracle WebLogic Server on Azure Azure Arc-enabled Kubernetes](https://github.com/galiacheng/weblogic-aks-flux2-kustomize/blob/main/resources/docs/azure-arc-gitops.md)
 
 
 
