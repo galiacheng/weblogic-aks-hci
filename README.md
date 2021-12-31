@@ -39,7 +39,7 @@ In this guide, you'll walk through the steps to run Oracle WebLogic Server on Az
 
 ## Architecture
 
-WIP
+![Architecture](resources/run-weblogic-on-hci-aks.png)
 
 ## Prerequisites
 
