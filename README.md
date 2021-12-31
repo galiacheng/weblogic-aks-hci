@@ -978,7 +978,7 @@ You can leverage GitOps for CI/CD, see [Deploy configurations using GitOps on an
 
 Sample: [GitOps sample for running Oracle WebLogic Server on Azure Kubernetes Service](https://github.com/galiacheng/weblogic-aks-flux2-kustomize)
 
-Sample document to create GitOps in Azure Arc-enabled Kubernetes: [Use Gitops to run Oracle WebLogic Server on Azure Azure Arc-enabled Kubernetes](https://github.com/galiacheng/weblogic-aks-flux2-kustomize/blob/main/resources/docs/azure-arc-gitops.md)
+Document: [Use Gitops to run Oracle WebLogic Server on Azure Azure Arc-enabled Kubernetes](https://github.com/galiacheng/weblogic-aks-flux2-kustomize/blob/main/resources/docs/azure-arc-gitops.md)
 
 ### Demo Video
 
